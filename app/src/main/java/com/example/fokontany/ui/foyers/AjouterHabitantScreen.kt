@@ -1,7 +1,5 @@
 package com.example.fokontany.ui.foyers
 
-import android.app.DatePickerDialog
-import android.widget.DatePicker
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -18,15 +16,20 @@ import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Wc
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,10 +37,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.rejowan.ccpc.CountryCodePickerTextField
-import java.util.Calendar
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,6 +66,10 @@ fun AjouterHabitantScreen(
         mutableStateOf("")
     }
 
+    var afficherCalendrier by remember {
+        mutableStateOf(false)
+    }
+
     var telephone by remember {
         mutableStateOf("")
     }
@@ -76,12 +84,6 @@ fun AjouterHabitantScreen(
 
     var codePaysTelephone by remember {
         mutableStateOf("")
-    }
-
-    val context = LocalContext.current
-
-    val calendar = remember {
-        Calendar.getInstance()
     }
 
     val sexes = listOf(
@@ -243,45 +245,26 @@ fun AjouterHabitantScreen(
                 OutlinedTextField(
                     value = dateNaissance,
                     onValueChange = {},
-                    readOnly = true,
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.CalendarMonth,
-                            contentDescription = null
-                        )
-                    },
+                    modifier = Modifier.fillMaxWidth(),
                     label = {
                         Text("Date de naissance")
                     },
+                    placeholder = {
+                        Text("JJ/MM/AAAA")
+                    },
+                    readOnly = true,
                     trailingIcon = {
-                        androidx.compose.material3.IconButton(
+                        IconButton(
                             onClick = {
-                                DatePickerDialog(
-                                    context,
-                                    { _: DatePicker, year: Int, month: Int, day: Int ->
-                                        dateNaissance = String.format(
-                                            "%02d/%02d/%04d",
-                                            day,
-                                            month + 1,
-                                            year
-                                        )
-                                    },
-                                    calendar.get(Calendar.YEAR),
-                                    calendar.get(Calendar.MONTH),
-                                    calendar.get(Calendar.DAY_OF_MONTH)
-                                ).show()
+                                afficherCalendrier = true
                             }
                         ) {
                             Icon(
                                 imageVector = Icons.Default.CalendarMonth,
-                                contentDescription = "Choisir la date"
+                                contentDescription = "Choisir la date de naissance"
                             )
                         }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    singleLine = true
+                    }
                 )
             }
         }
@@ -391,6 +374,51 @@ fun AjouterHabitantScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Enregistrer l'habitant")
+        }
+    }
+    if (afficherCalendrier) {
+
+        val datePickerState = rememberDatePickerState()
+
+        DatePickerDialog(
+            onDismissRequest = {
+                afficherCalendrier = false
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val millis = datePickerState.selectedDateMillis
+
+                        if (millis != null) {
+                            val date = Date(millis)
+
+                            val format = SimpleDateFormat(
+                                "dd/MM/yyyy",
+                                Locale.getDefault()
+                            )
+
+                            dateNaissance = format.format(date)
+                        }
+
+                        afficherCalendrier = false
+                    }
+                ) {
+                    Text("Valider")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        afficherCalendrier = false
+                    }
+                ) {
+                    Text("Annuler")
+                }
+            }
+        ) {
+            DatePicker(
+                state = datePickerState
+            )
         }
     }
 }

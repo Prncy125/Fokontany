@@ -48,8 +48,9 @@ import com.example.fokontany.data.local.entity.FoyerEntity
 fun FoyersScreen(
     viewModel: FoyersViewModel,
     onFoyerClick: (Long) -> Unit,
+    onAidesClick: () -> Unit,
     contentPadding: PaddingValues = PaddingValues(0.dp)
-) {
+){
     val foyers by viewModel.foyers.collectAsState()
 
     var adresse by remember { mutableStateOf("") }
@@ -85,6 +86,14 @@ fun FoyersScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 2.dp)
                 )
+                Button(
+                    onClick = onAidesClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp)
+                ) {
+                    Text("Programmes d'aide")
+                }
             }
 
             // Formulaire d'ajout
