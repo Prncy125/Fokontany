@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.fokontany.data.local.entity.HabitantEntity
+import com.rejowan.ccpc.Country
 import com.rejowan.ccpc.CountryCodePickerTextField
 import java.util.Calendar
 
@@ -251,14 +252,15 @@ fun FoyerDetailScreen(
                         onDefinirRepresentant = {
                             viewModel.definirRepresentant(habitant.id)
                         },
-                        onModifier = { nom, prenom, sexe, dateNaissance, telephone ->
+                        onModifier = { nom, prenom, sexe, dateNaissance, telephone, codePaysTelephone ->
                             viewModel.modifierHabitant(
                                 habitant = habitant,
                                 nom = nom,
                                 prenom = prenom,
                                 sexe = sexe,
                                 dateNaissance = dateNaissance,
-                                telephone = telephone
+                                telephone = telephone,
+                                codePaysTelephone = codePaysTelephone
                             )
                         },
                         onDesactiver = {
@@ -267,7 +269,6 @@ fun FoyerDetailScreen(
                         onActiver = {
                             viewModel.activerHabitant(habitant.id)
                         }
-
                     )
                 }
             }
@@ -280,13 +281,7 @@ fun FoyerDetailScreen(
 private fun HabitantItem(
     habitant: HabitantEntity,
     onDefinirRepresentant: () -> Unit,
-    onModifier: (
-        String,
-        String,
-        String,
-        String,
-        String?
-    ) -> Unit,
+    onModifier: (String, String, String, String, String?, String) -> Unit,
     onDesactiver: () -> Unit,
     onActiver: () -> Unit
 ) {
@@ -298,10 +293,15 @@ private fun HabitantItem(
     var sexe by remember { mutableStateOf(habitant.sexe) }
     var dateNaissance by remember { mutableStateOf(habitant.dateNaissance) }
     var telephone by remember { mutableStateOf(habitant.telephone ?: "") }
+    var codePaysTelephone by remember {
+        mutableStateOf(habitant.codePaysTelephone)
+    }
+    val paysTelephone = Country.findCountry(codePaysTelephone)
+
+    val context = LocalContext.current
 
     var sexeMenuOuvert by remember { mutableStateOf(false) }
 
-    val context = LocalContext.current
     val calendar = remember { Calendar.getInstance() }
 
     val sexes = listOf("Homme", "Femme", "Autre")
@@ -464,9 +464,11 @@ private fun HabitantItem(
 
                 CountryCodePickerTextField(
                     number = telephone,
-                    onValueChange = { _, number, _ ->
+                    onValueChange = { countryCode, number, _ ->
+                        codePaysTelephone = countryCode
                         telephone = number
                     },
+                    selectedCountry = paysTelephone,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp),
@@ -487,7 +489,8 @@ private fun HabitantItem(
                                 prenom,
                                 sexe,
                                 dateNaissance,
-                                telephone.trim().ifBlank { null }
+                                telephone.trim().ifBlank { null },
+                                codePaysTelephone
                             )
 
                             modeModification = false
@@ -561,6 +564,7 @@ private fun HabitantItem(
                         Text("Définir comme représentant")
                     }
                 }
+
                 if (habitant.actif) {
                     Button(
                         onClick = {
