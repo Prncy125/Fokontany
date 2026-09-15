@@ -32,7 +32,10 @@ class FoyersViewModel(
             val foyer = FoyerEntity(
                 adresse = adresse,
                 quartier = quartier,
-                dateEnregistrement = java.time.LocalDate.now().toString()
+                dateEnregistrement = java.text.SimpleDateFormat(
+                    "yyyy-MM-dd",
+                    java.util.Locale.getDefault()
+                ).format(java.util.Date())
             )
 
             repository.inserer(foyer)

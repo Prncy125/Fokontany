@@ -1,19 +1,34 @@
 package com.example.fokontany.ui.foyers
 
 import android.app.DatePickerDialog
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -21,15 +36,18 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -50,12 +68,28 @@ fun FoyerDetailScreen(
     val foyerData = foyerAvecHabitants
 
     if (foyerData == null) {
-        Text(
-            text = "Foyer introuvable.",
+        Column(
             modifier = Modifier
+                .fillMaxSize()
                 .padding(contentPadding)
-                .padding(16.dp)
-        )
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Warning,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.error
+            )
+
+            Text(
+                text = "Foyer introuvable",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(top = 12.dp)
+            )
+        }
+
         return
     }
 
@@ -110,149 +144,404 @@ fun FoyerDetailScreen(
             .padding(contentPadding)
             .padding(16.dp)
     ) {
-        Text(
-            text = "Détail du foyer",
-            style = MaterialTheme.typography.headlineMedium
-        )
 
-        if (modeModification) {
-            OutlinedTextField(
-                value = adresse,
-                onValueChange = { adresse = it },
-                label = { Text("Adresse") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp),
-                singleLine = true
-            )
-
-            OutlinedTextField(
-                value = quartier,
-                onValueChange = { quartier = it },
-                label = { Text("Quartier") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                singleLine = true
-            )
-
-            Button(
-                onClick = {
-                    if (
-                        adresse.isNotBlank() &&
-                        quartier.isNotBlank()
-                    ) {
-                        viewModel.modifierFoyer(
-                            adresse = adresse,
-                            quartier = quartier
-                        )
-                        modeModification = false
-                    }
-                },
-                enabled = adresse.isNotBlank() && quartier.isNotBlank(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp)
-            ) {
-                Text("Enregistrer les modifications")
-            }
-
-            TextButton(
-                onClick = {
-                    adresse = foyer.adresse
-                    quartier = foyer.quartier
-                    modeModification = false
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Annuler")
-            }
-        } else {
-            Text(
-                text = "Adresse : ${foyer.adresse}",
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(top = 16.dp)
-            )
-
-            Text(
-                text = "Quartier : ${foyer.quartier}",
-                style = MaterialTheme.typography.bodyLarge
-            )
-
-            Text(
-                text = "Date d'enregistrement : ${foyer.dateEnregistrement}",
-                style = MaterialTheme.typography.bodyLarge
-            )
-
-            Text(
-                text = if (foyer.actif) "Statut : Actif" else "Statut : Inactif",
-                style = MaterialTheme.typography.bodyLarge
-            )
-
-            Button(
-                onClick = {
-                    adresse = foyer.adresse
-                    quartier = foyer.quartier
-                    modeModification = true
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp)
-            ) {
-                Text("Modifier le foyer")
-            }
-
-            Button(
-                onClick = {
-                    afficherConfirmation = true
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp)
-            ) {
-                Text("Désactiver le foyer")
-            }
-        }
-
-        Button(
-            onClick = onAjouterHabitant,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp)
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("Ajouter un habitant")
-        }
 
-        Text(
-            text = "Habitants (${habitants.size})",
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(
-                top = 24.dp,
-                bottom = 8.dp
-            )
-        )
+            item {
 
-        if (habitants.isEmpty()) {
-            Text(
-                text = "Aucun habitant enregistré dans ce foyer."
-            )
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+                // En-tête
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = MaterialTheme.shapes.large
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Home,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier
+                                .padding(12.dp)
+                                .size(32.dp)
+                        )
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = 16.dp)
+                    ) {
+                        Text(
+                            text = "Détail du foyer",
+                            style = MaterialTheme.typography.headlineMedium
+                        )
+
+                        Text(
+                            text = "${habitants.size} habitant(s)",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
+                }
+            }
+
+            item {
+
+                // Informations du foyer
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.large
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Home,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+
+                            Text(
+                                text = "Informations du foyer",
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(start = 10.dp)
+                            )
+                        }
+
+                        if (modeModification) {
+
+                            OutlinedTextField(
+                                value = adresse,
+                                onValueChange = { adresse = it },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Home,
+                                        contentDescription = null
+                                    )
+                                },
+                                label = {
+                                    Text("Adresse")
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 16.dp),
+                                singleLine = true
+                            )
+
+                            OutlinedTextField(
+                                value = quartier,
+                                onValueChange = { quartier = it },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.LocationOn,
+                                        contentDescription = null
+                                    )
+                                },
+                                label = {
+                                    Text("Quartier")
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp),
+                                singleLine = true
+                            )
+
+                            Button(
+                                onClick = {
+                                    if (
+                                        adresse.isNotBlank() &&
+                                        quartier.isNotBlank()
+                                    ) {
+                                        viewModel.modifierFoyer(
+                                            adresse = adresse.trim(),
+                                            quartier = quartier.trim()
+                                        )
+
+                                        modeModification = false
+                                    }
+                                },
+                                enabled = adresse.isNotBlank() &&
+                                        quartier.isNotBlank(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 12.dp)
+                            ) {
+                                Text("Enregistrer")
+                            }
+
+                            TextButton(
+                                onClick = {
+                                    adresse = foyer.adresse
+                                    quartier = foyer.quartier
+                                    modeModification = false
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Annuler")
+                            }
+
+                        } else {
+
+                            Row(
+                                modifier = Modifier.padding(top = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Home,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+
+                                Column(
+                                    modifier = Modifier.padding(start = 10.dp)
+                                ) {
+                                    Text(
+                                        text = "Adresse",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+
+                                    Text(
+                                        text = foyer.adresse,
+                                        style = MaterialTheme.typography.bodyLarge
+                                    )
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.padding(top = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.LocationOn,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+
+                                Column(
+                                    modifier = Modifier.padding(start = 10.dp)
+                                ) {
+                                    Text(
+                                        text = "Quartier",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+
+                                    Text(
+                                        text = foyer.quartier,
+                                        style = MaterialTheme.typography.bodyLarge
+                                    )
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.padding(top = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CalendarMonth,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+
+                                Column(
+                                    modifier = Modifier.padding(start = 10.dp)
+                                ) {
+                                    Text(
+                                        text = "Enregistré le",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+
+                                    Text(
+                                        text = foyer.dateEnregistrement,
+                                        style = MaterialTheme.typography.bodyLarge
+                                    )
+                                }
+                            }
+
+                            Surface(
+                                color = if (foyer.actif) {
+                                    MaterialTheme.colorScheme.primaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant
+                                },
+                                shape = MaterialTheme.shapes.small,
+                                modifier = Modifier.padding(top = 12.dp)
+                            ) {
+                                Text(
+                                    text = if (foyer.actif) {
+                                        "Actif"
+                                    } else {
+                                        "Inactif"
+                                    },
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = if (foyer.actif) {
+                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
+                                    modifier = Modifier.padding(
+                                        horizontal = 10.dp,
+                                        vertical = 6.dp
+                                    )
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedButton(
+                                    onClick = {
+                                        adresse = foyer.adresse
+                                        quartier = foyer.quartier
+                                        modeModification = true
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = null
+                                    )
+
+                                    Spacer(
+                                        modifier = Modifier.size(6.dp)
+                                    )
+
+                                    Text("Modifier")
+                                }
+
+                                OutlinedButton(
+                                    onClick = {
+                                        afficherConfirmation = true
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("Désactiver")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            item {
+
+                Button(
+                    onClick = onAjouterHabitant,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PersonAdd,
+                        contentDescription = null
+                    )
+
+                    Spacer(
+                        modifier = Modifier.size(8.dp)
+                    )
+
+                    Text("Ajouter un habitant")
+                }
+            }
+
+            item {
+
+                Text(
+                    text = "Habitants",
+                    style = MaterialTheme.typography.titleLarge
+                )
+
+                Text(
+                    text = if (habitants.size == 1) {
+                        "1 personne enregistrée"
+                    } else {
+                        "${habitants.size} personnes enregistrées"
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+
+            if (habitants.isEmpty()) {
+
+                item {
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.large
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                shape = MaterialTheme.shapes.large
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .size(40.dp),
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+
+                            Text(
+                                text = "Aucun habitant",
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(top = 12.dp)
+                            )
+
+                            Text(
+                                text = "Ajoutez les personnes qui vivent dans ce foyer.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+                    }
+                }
+
+            } else {
+
                 items(
                     items = habitants,
                     key = { it.id }
                 ) { habitant ->
+
                     HabitantItem(
                         habitant = habitant,
                         onDefinirRepresentant = {
                             viewModel.definirRepresentant(habitant.id)
                         },
-                        onModifier = { nom, prenom, sexe, dateNaissance, telephone, codePaysTelephone ->
+                        onModifier = {
+                                nom,
+                                prenom,
+                                sexe,
+                                dateNaissance,
+                                telephone,
+                                codePaysTelephone ->
                             viewModel.modifierHabitant(
                                 habitant = habitant,
                                 nom = nom,
@@ -287,24 +576,30 @@ private fun HabitantItem(
 ) {
     var modeModification by remember { mutableStateOf(false) }
     var afficherConfirmation by remember { mutableStateOf(false) }
+    var menuOuvert by remember { mutableStateOf(false) }
 
     var nom by remember { mutableStateOf(habitant.nom) }
     var prenom by remember { mutableStateOf(habitant.prenom) }
     var sexe by remember { mutableStateOf(habitant.sexe) }
     var dateNaissance by remember { mutableStateOf(habitant.dateNaissance) }
     var telephone by remember { mutableStateOf(habitant.telephone ?: "") }
+
     var codePaysTelephone by remember {
         mutableStateOf(habitant.codePaysTelephone)
     }
+
     val paysTelephone = Country.findCountry(codePaysTelephone)
 
     val context = LocalContext.current
-
     var sexeMenuOuvert by remember { mutableStateOf(false) }
 
     val calendar = remember { Calendar.getInstance() }
 
-    val sexes = listOf("Homme", "Femme", "Autre")
+    val sexes = listOf(
+        "Homme",
+        "Femme",
+        "Autre"
+    )
 
     if (afficherConfirmation) {
         AlertDialog(
@@ -343,24 +638,63 @@ private fun HabitantItem(
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
+
             if (modeModification) {
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Modifier l'habitant",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+
+                    IconButton(
+                        onClick = {
+                            nom = habitant.nom
+                            prenom = habitant.prenom
+                            sexe = habitant.sexe
+                            dateNaissance = habitant.dateNaissance
+                            telephone = habitant.telephone ?: ""
+                            codePaysTelephone =
+                                habitant.codePaysTelephone
+
+                            modeModification = false
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Annuler"
+                        )
+                    }
+                }
+
                 OutlinedTextField(
                     value = nom,
                     onValueChange = { nom = it },
-                    label = { Text("Nom") },
-                    modifier = Modifier.fillMaxWidth(),
+                    label = {
+                        Text("Nom")
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
                     singleLine = true
                 )
 
                 OutlinedTextField(
                     value = prenom,
                     onValueChange = { prenom = it },
-                    label = { Text("Prénom") },
+                    label = {
+                        Text("Prénom")
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp),
@@ -380,7 +714,9 @@ private fun HabitantItem(
                         value = sexe,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Sexe") },
+                        label = {
+                            Text("Sexe")
+                        },
                         trailingIcon = {
                             ExposedDropdownMenuDefaults.TrailingIcon(
                                 expanded = sexeMenuOuvert
@@ -392,7 +728,7 @@ private fun HabitantItem(
                         singleLine = true
                     )
 
-                    ExposedDropdownMenu(
+                    DropdownMenu(
                         expanded = sexeMenuOuvert,
                         onDismissRequest = {
                             sexeMenuOuvert = false
@@ -400,7 +736,9 @@ private fun HabitantItem(
                     ) {
                         sexes.forEach { option ->
                             DropdownMenuItem(
-                                text = { Text(option) },
+                                text = {
+                                    Text(option)
+                                },
                                 onClick = {
                                     sexe = option
                                     sexeMenuOuvert = false
@@ -414,35 +752,41 @@ private fun HabitantItem(
                     value = dateNaissance,
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Date de naissance") },
+                    label = {
+                        Text("Date de naissance")
+                    },
                     trailingIcon = {
                         IconButton(
                             onClick = {
                                 val parts = dateNaissance.split("-")
 
-                                val year = parts.getOrNull(0)
+                                val year = parts
+                                    .getOrNull(0)
                                     ?.toIntOrNull()
                                     ?: calendar.get(Calendar.YEAR)
 
                                 val month = (
-                                        parts.getOrNull(1)
+                                        parts
+                                            .getOrNull(1)
                                             ?.toIntOrNull()
                                             ?: calendar.get(Calendar.MONTH) + 1
                                         ) - 1
 
-                                val day = parts.getOrNull(2)
+                                val day = parts
+                                    .getOrNull(2)
                                     ?.toIntOrNull()
                                     ?: calendar.get(Calendar.DAY_OF_MONTH)
 
                                 DatePickerDialog(
                                     context,
                                     { _, selectedYear, selectedMonth, selectedDay ->
-                                        dateNaissance = String.format(
-                                            "%04d-%02d-%02d",
-                                            selectedYear,
-                                            selectedMonth + 1,
-                                            selectedDay
-                                        )
+                                        dateNaissance =
+                                            String.format(
+                                                "%04d-%02d-%02d",
+                                                selectedYear,
+                                                selectedMonth + 1,
+                                                selectedDay
+                                            )
                                     },
                                     year,
                                     month,
@@ -451,7 +795,7 @@ private fun HabitantItem(
                             }
                         ) {
                             Icon(
-                                imageVector = Icons.Default.DateRange,
+                                imageVector = Icons.Default.CalendarMonth,
                                 contentDescription = "Choisir la date"
                             )
                         }
@@ -464,7 +808,10 @@ private fun HabitantItem(
 
                 CountryCodePickerTextField(
                     number = telephone,
-                    onValueChange = { countryCode, number, _ ->
+                    onValueChange = {
+                            countryCode,
+                            number,
+                            _ ->
                         codePaysTelephone = countryCode
                         telephone = number
                     },
@@ -472,7 +819,9 @@ private fun HabitantItem(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp),
-                    label = { Text("Téléphone") },
+                    label = {
+                        Text("Téléphone")
+                    },
                     showSheet = true
                 )
 
@@ -485,11 +834,13 @@ private fun HabitantItem(
                             dateNaissance.isNotBlank()
                         ) {
                             onModifier(
-                                nom,
-                                prenom,
+                                nom.trim(),
+                                prenom.trim(),
                                 sexe,
                                 dateNaissance,
-                                telephone.trim().ifBlank { null },
+                                telephone.trim().ifBlank {
+                                    null
+                                },
                                 codePaysTelephone
                             )
 
@@ -503,106 +854,222 @@ private fun HabitantItem(
                                 dateNaissance.isNotBlank(),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 8.dp)
+                        .padding(top = 12.dp)
                 ) {
                     Text("Enregistrer")
                 }
 
-                TextButton(
-                    onClick = {
-                        nom = habitant.nom
-                        prenom = habitant.prenom
-                        sexe = habitant.sexe
-                        dateNaissance = habitant.dateNaissance
-                        telephone = habitant.telephone ?: ""
-                        modeModification = false
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Annuler")
-                }
             } else {
-                Text(
-                    text = "${habitant.prenom} ${habitant.nom}",
-                    style = MaterialTheme.typography.titleMedium
-                )
 
-                Text(
-                    text = "Sexe : ${habitant.sexe}",
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
 
-                Text(
-                    text = "Date de naissance : ${habitant.dateNaissance}",
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                    Surface(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = MaterialTheme.shapes.medium
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .padding(10.dp)
+                                .size(28.dp),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
 
-                if (habitant.telephone != null) {
-                    Text(
-                        text = "Téléphone : ${habitant.telephone}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = 12.dp)
+                    ) {
+                        Text(
+                            text = "${habitant.prenom} ${habitant.nom}",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+
+                        Text(
+                            text = habitant.sexe,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    IconButton(
+                        onClick = {
+                            menuOuvert = true
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "Actions"
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = menuOuvert,
+                        onDismissRequest = {
+                            menuOuvert = false
+                        }
+                    ) {
+
+                        if (habitant.actif && !habitant.estRepresentant) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text("Définir représentant")
+                                },
+                                onClick = {
+                                    menuOuvert = false
+                                    onDefinirRepresentant()
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Star,
+                                        contentDescription = null
+                                    )
+                                }
+                            )
+                        }
+
+                        if (habitant.actif) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text("Modifier")
+                                },
+                                onClick = {
+                                    menuOuvert = false
+                                    modeModification = true
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = null
+                                    )
+                                }
+                            )
+
+                            DropdownMenuItem(
+                                text = {
+                                    Text("Désactiver")
+                                },
+                                onClick = {
+                                    menuOuvert = false
+                                    afficherConfirmation = true
+                                }
+                            )
+                        } else {
+                            DropdownMenuItem(
+                                text = {
+                                    Text("Activer")
+                                },
+                                onClick = {
+                                    menuOuvert = false
+                                    onActiver()
+                                }
+                            )
+                        }
+                    }
+                }
+
+                if (habitant.estRepresentant && habitant.actif) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = MaterialTheme.shapes.small,
+                        modifier = Modifier.padding(top = 12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(
+                                horizontal = 10.dp,
+                                vertical = 6.dp
+                            ),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+
+                            Text(
+                                text = "Représentant",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.padding(start = 6.dp)
+                            )
+                        }
+                    }
                 }
 
                 if (!habitant.actif) {
-                    Text(
-                        text = "Habitant désactivé",
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                } else if (habitant.estRepresentant) {
-                    Text(
-                        text = "Représentant actuel",
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                } else {
-                    Button(
-                        onClick = onDefinirRepresentant,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp)
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = MaterialTheme.shapes.small,
+                        modifier = Modifier.padding(top = 12.dp)
                     ) {
-                        Text("Définir comme représentant")
+                        Text(
+                            text = "Désactivé",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(
+                                horizontal = 10.dp,
+                                vertical = 6.dp
+                            )
+                        )
                     }
                 }
 
-                if (habitant.actif) {
-                    Button(
-                        onClick = {
-                            nom = habitant.nom
-                            prenom = habitant.prenom
-                            sexe = habitant.sexe
-                            dateNaissance = habitant.dateNaissance
-                            telephone = habitant.telephone ?: ""
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
 
-                            modeModification = true
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp)
+                    Column(
+                        modifier = Modifier.weight(1f)
                     ) {
-                        Text("Modifier l'habitant")
-                    }
-                }
+                        Text(
+                            text = "Naissance",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
 
-                if (habitant.actif) {
-                    Button(
-                        onClick = {
-                            afficherConfirmation = true
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp)
-                    ) {
-                        Text("Désactiver l'habitant")
+                        Text(
+                            text = habitant.dateNaissance,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
-                } else {
-                    Button(
-                        onClick = onActiver,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp)
-                    ) {
-                        Text("Activer l'habitant")
+
+                    if (habitant.telephone != null) {
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = "Téléphone",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Phone,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+
+                                Text(
+                                    text = habitant.telephone,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.padding(start = 4.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }
