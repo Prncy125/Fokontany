@@ -29,7 +29,8 @@ class FoyerDetailViewModel(
         prenom: String,
         sexe: String,
         dateNaissance: String,
-        telephone: String?
+        telephone: String?,
+        codePaysTelephone: String
     ) {
         viewModelScope.launch {
             val habitant = HabitantEntity(
@@ -38,9 +39,9 @@ class FoyerDetailViewModel(
                 prenom = prenom,
                 sexe = sexe,
                 dateNaissance = dateNaissance,
-                telephone = telephone
+                telephone = telephone,
+                codePaysTelephone = codePaysTelephone
             )
-
             repository.insererHabitant(habitant)
         }
     }
@@ -87,7 +88,8 @@ class FoyerDetailViewModel(
         prenom: String,
         sexe: String,
         dateNaissance: String,
-        telephone: String?
+        telephone: String?,
+        codePaysTelephone: String
     ) {
         viewModelScope.launch {
             val habitantModifie = habitant.copy(
@@ -96,6 +98,7 @@ class FoyerDetailViewModel(
                 sexe = sexe,
                 dateNaissance = dateNaissance,
                 telephone = telephone?.trim()?.ifBlank { null },
+                codePaysTelephone = codePaysTelephone,
                 syncStatus = SyncStatus.PENDING
             )
 

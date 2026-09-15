@@ -79,6 +79,8 @@ fun AjouterHabitantScreen(
         Calendar.getInstance()
     }
 
+    var codePaysTelephone by remember { mutableStateOf("") }
+
     // ---------------------------------------------------------
     // LISTE DES SEXES
     // ---------------------------------------------------------
@@ -241,25 +243,14 @@ fun AjouterHabitantScreen(
 
         CountryCodePickerTextField(
             number = telephone,
-
-            onValueChange = { _, number, isValid ->
-
+            onValueChange = { countryCode, number, isValid ->
+                codePaysTelephone = countryCode
                 telephone = number
-
-                telephoneValide =
-                    number.isBlank() || isValid
+                telephoneValide = number.isBlank() || isValid
             },
-
             modifier = Modifier.fillMaxWidth(),
-
-            label = {
-                Text("Téléphone")
-            },
-
-            showError =
-                telephone.isNotBlank() &&
-                        !telephoneValide,
-
+            label = { Text("Téléphone") },
+            showError = telephone.isNotBlank() && !telephoneValide,
             showSheet = true
         )
 
@@ -313,11 +304,8 @@ fun AjouterHabitantScreen(
                     prenom = prenom.trim(),
                     sexe = sexe,
                     dateNaissance = datePourLaBase,
-                    telephone = telephone
-                        .trim()
-                        .ifBlank {
-                            null
-                        }
+                    telephone = telephone.trim().ifBlank { null },
+                    codePaysTelephone = codePaysTelephone
                 )
 
                 onHabitantAjoute()

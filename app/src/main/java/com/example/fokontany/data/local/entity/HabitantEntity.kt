@@ -38,10 +38,11 @@ data class HabitantEntity(
     val dateNaissance: String,
 
     val telephone: String? = null,
+    val codePaysTelephone: String = "",
 
     val estRepresentant: Boolean = false,
 
     val actif: Boolean = true,
 
-    val syncStatus: SyncStatus = SyncStatus.PENDING
+    val syncStatus: SyncStatus = SyncStatus.PENDING,
 )
