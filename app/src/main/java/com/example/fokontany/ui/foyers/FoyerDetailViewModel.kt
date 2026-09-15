@@ -47,13 +47,17 @@ class FoyerDetailViewModel(
 
     fun definirRepresentant(habitantId: Long) {
         viewModelScope.launch {
-            repository.definirRepresentant(
-                foyerId = foyerId,
-                habitantId = habitantId
-            )
+            try {
+                repository.definirRepresentant(
+                    foyerId = foyerId,
+                    habitantId = habitantId
+                )
+            } catch (e: IllegalArgumentException) {
+                // La règle métier empêche l'opération.
+                // On évite que l'exception fasse planter l'application.
+            }
         }
     }
-
     fun modifierFoyer(
         adresse: String,
         quartier: String
@@ -102,6 +106,12 @@ class FoyerDetailViewModel(
     fun desactiverHabitant(habitantId: Long) {
         viewModelScope.launch {
             repository.desactiverHabitant(habitantId)
+        }
+    }
+
+    fun activerHabitant(habitantId: Long) {
+        viewModelScope.launch {
+            repository.activerHabitant(habitantId)
         }
     }
 }

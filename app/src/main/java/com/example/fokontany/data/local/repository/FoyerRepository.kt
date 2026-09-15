@@ -55,4 +55,8 @@ class FoyerRepository(
     suspend fun desactiverFoyer(foyerId: Long) {
         foyerDao.desactiver(foyerId)
     }
+
+    suspend fun activerHabitant(habitantId: Long) {
+        habitantDao.activer(habitantId)
+    }
 }
