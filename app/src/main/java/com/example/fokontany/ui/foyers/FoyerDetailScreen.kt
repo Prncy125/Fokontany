@@ -263,7 +263,11 @@ fun FoyerDetailScreen(
                         },
                         onDesactiver = {
                             viewModel.desactiverHabitant(habitant.id)
+                        },
+                        onActiver = {
+                            viewModel.activerHabitant(habitant.id)
                         }
+
                     )
                 }
             }
@@ -283,7 +287,8 @@ private fun HabitantItem(
         String,
         String?
     ) -> Unit,
-    onDesactiver: () -> Unit
+    onDesactiver: () -> Unit,
+    onActiver: () -> Unit
 ) {
     var modeModification by remember { mutableStateOf(false) }
     var afficherConfirmation by remember { mutableStateOf(false) }
@@ -536,7 +541,12 @@ private fun HabitantItem(
                     )
                 }
 
-                if (habitant.estRepresentant) {
+                if (!habitant.actif) {
+                    Text(
+                        text = "Habitant désactivé",
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                } else if (habitant.estRepresentant) {
                     Text(
                         text = "Représentant actuel",
                         style = MaterialTheme.typography.labelLarge
@@ -551,33 +561,45 @@ private fun HabitantItem(
                         Text("Définir comme représentant")
                     }
                 }
+                if (habitant.actif) {
+                    Button(
+                        onClick = {
+                            nom = habitant.nom
+                            prenom = habitant.prenom
+                            sexe = habitant.sexe
+                            dateNaissance = habitant.dateNaissance
+                            telephone = habitant.telephone ?: ""
 
-                Button(
-                    onClick = {
-                        nom = habitant.nom
-                        prenom = habitant.prenom
-                        sexe = habitant.sexe
-                        dateNaissance = habitant.dateNaissance
-                        telephone = habitant.telephone ?: ""
-
-                        modeModification = true
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
-                ) {
-                    Text("Modifier l'habitant")
+                            modeModification = true
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                    ) {
+                        Text("Modifier l'habitant")
+                    }
                 }
 
-                Button(
-                    onClick = {
-                        afficherConfirmation = true
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
-                ) {
-                    Text("Désactiver l'habitant")
+                if (habitant.actif) {
+                    Button(
+                        onClick = {
+                            afficherConfirmation = true
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                    ) {
+                        Text("Désactiver l'habitant")
+                    }
+                } else {
+                    Button(
+                        onClick = onActiver,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                    ) {
+                        Text("Activer l'habitant")
+                    }
                 }
             }
         }

@@ -97,6 +97,7 @@ abstract class HabitantDao {
         AND actif = 1
         """
     )
+
     protected abstract suspend fun appartientAuFoyer(
         foyerId: Long,
         habitantId: Long
@@ -114,6 +115,16 @@ abstract class HabitantDao {
     protected abstract suspend fun retirerRepresentant(
         foyerId: Long
     )
+
+    @Query(
+        """
+    UPDATE habitants
+    SET actif = 1,
+        syncStatus = 'PENDING'
+    WHERE id = :id
+    """
+    )
+    abstract suspend fun activer(id: Long)
 
     @Query(
         """
