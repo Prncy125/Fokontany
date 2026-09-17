@@ -1,4 +1,4 @@
-package com.example.fokontany
+﻿package com.example.fokontany
 
 import android.os.Build
 import android.os.Bundle
@@ -8,14 +8,30 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -33,42 +49,50 @@ import com.example.fokontany.ui.aides.ProgrammesAideViewModel
 import com.example.fokontany.ui.aides.AjouterProgrammeAideScreen
 import com.example.fokontany.ui.aides.ModifierProgrammeAideScreen
 
+sealed class BottomNavItem(
+    val route: String,
+    val label: String,
+    val selectedIcon: ImageVector,
+    val unselectedIcon: ImageVector
+) {
+    data object Foyers : BottomNavItem(
+        route = "foyers",
+        label = "Foyers",
+        selectedIcon = Icons.Filled.Home,
+        unselectedIcon = Icons.Outlined.Home
+    )
+    data object Aides : BottomNavItem(
+        route = "aides",
+        label = "Aides",
+        selectedIcon = Icons.Filled.Favorite,
+        unselectedIcon = Icons.Outlined.FavoriteBorder
+    )
+}
+
+val bottomNavItems = listOf(
+    BottomNavItem.Foyers,
+    BottomNavItem.Aides
+)
+
 class MainActivity : ComponentActivity() {
 
     private val foyersViewModel: FoyersViewModel by viewModels {
-
         val database = AppDatabase.getDatabase(applicationContext)
-
-        val repository = FoyerRepository(
-            database.foyerDao(),
-            database.habitantDao()
-        )
-
+        val repository = FoyerRepository(database.foyerDao(), database.habitantDao())
         object : ViewModelProvider.Factory {
-
             @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(
-                modelClass: Class<T>
-            ): T {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return FoyersViewModel(repository) as T
             }
         }
     }
 
     private val programmesAideViewModel: ProgrammesAideViewModel by viewModels {
-
         val database = AppDatabase.getDatabase(applicationContext)
-
-        val repository = ProgrammeAideRepository(
-            database.programmeAideDao()
-        )
-
+        val repository = ProgrammeAideRepository(database.programmeAideDao())
         object : ViewModelProvider.Factory {
-
             @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(
-                modelClass: Class<T>
-            ): T {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return ProgrammesAideViewModel(repository) as T
             }
         }
@@ -77,20 +101,14 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         enableEdgeToEdge()
 
         val database = AppDatabase.getDatabase(applicationContext)
-
-        val repository = FoyerRepository(
-            database.foyerDao(),
-            database.habitantDao()
-        )
+        val repository = FoyerRepository(database.foyerDao(), database.habitantDao())
 
         setContent {
             FokontanyTheme {
-
-                FokontanyNavigation(
+                FokontanyApp(
                     foyersViewModel = foyersViewModel,
                     programmesAideViewModel = programmesAideViewModel,
                     repository = repository
@@ -102,217 +120,157 @@ class MainActivity : ComponentActivity() {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun FokontanyNavigation(
+fun FokontanyApp(
     foyersViewModel: FoyersViewModel,
     programmesAideViewModel: ProgrammesAideViewModel,
     repository: FoyerRepository
-){
+) {
     val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
 
-    NavHost(
-        navController = navController,
-        startDestination = "foyers"
-    ) {
+    val showBottomBar = bottomNavItems.any { item ->
+        currentDestination?.hierarchy?.any { it.route == item.route } == true
+    }
 
-        // ---------------------------------------------------------
-        // 1. LISTE DES FOYERS
-        // ---------------------------------------------------------
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        bottomBar = {
+            if (showBottomBar) {
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ) {
+                    bottomNavItems.forEach { item ->
+                        val selected = currentDestination?.hierarchy?.any {
+                            it.route == item.route
+                        } == true
 
-        composable("foyers") {
-
-            Scaffold(
-                modifier = Modifier.fillMaxSize()
-            ) { innerPadding ->
-
-                FoyersScreen(
-                    viewModel = foyersViewModel,
-
-                    onFoyerClick = { foyerId ->
-                        navController.navigate(
-                            "foyer/$foyerId"
+                        NavigationBarItem(
+                            selected = selected,
+                            onClick = {
+                                navController.navigate(item.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            icon = {
+                                Icon(
+                                    imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
+                                    contentDescription = item.label
+                                )
+                            },
+                            label = {
+                                Text(text = item.label, style = MaterialTheme.typography.labelSmall)
+                            }
                         )
-                    },
-                    onAidesClick = {
-                        navController.navigate("aides")
-                    },
-                    contentPadding = innerPadding
-                )
+                    }
+                }
             }
         }
+    ) { innerPadding ->
 
-        // ---------------------------------------------------------
-        // 2. PROGRAMMES D'AIDE
-        // ---------------------------------------------------------
-
-        composable("aides") {
-
-            Scaffold(
-                modifier = Modifier.fillMaxSize()
-            ) { innerPadding ->
-
-                AidesScreen(
-                    viewModel = programmesAideViewModel,
-
-                    onAjouterProgramme = {
-                        navController.navigate("aides/ajouter")
-                    },
-
-                    onModifierProgramme = { programme ->
-                        navController.navigate(
-                            "aides/modifier/${programme.id}"
-                        )
+        NavHost(
+            navController = navController,
+            startDestination = "foyers",
+            modifier = Modifier.padding(innerPadding)
+        ) {
+            composable("foyers") {
+                FoyersScreen(
+                    viewModel = foyersViewModel,
+                    onFoyerClick = { foyerId ->
+                        navController.navigate("foyer/$foyerId")
                     }
                 )
             }
-        }
-        composable(
-            route = "aides/modifier/{programmeId}",
-            arguments = listOf(
-                navArgument("programmeId") {
-                    type = NavType.LongType
-                }
-            )
-        ) { backStackEntry ->
 
-            val programmeId =
-                backStackEntry.arguments?.getLong("programmeId")
-                    ?: return@composable
+            composable(
+                route = "foyer/{foyerId}",
+                arguments = listOf(navArgument("foyerId") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val foyerId = backStackEntry.arguments?.getLong("foyerId") ?: return@composable
 
-            ModifierProgrammeAideScreen(
-                viewModel = programmesAideViewModel,
-                programmeId = programmeId,
+                val viewModel: FoyerDetailViewModel = viewModel(
+                    factory = object : ViewModelProvider.Factory {
+                        @Suppress("UNCHECKED_CAST")
+                        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                            return FoyerDetailViewModel(repository = repository, foyerId = foyerId) as T
+                        }
+                    }
+                )
 
-                onProgrammeModifie = {
-                    navController.popBackStack()
-                },
-
-                onRetour = {
-                    navController.popBackStack()
-                }
-            )
-        }
-
-        // ---------------------------------------------------------
-        // 3. AJOUTER UN PROGRAMME D'AIDE
-        // ---------------------------------------------------------
-
-        composable("aides/ajouter") {
-
-            Scaffold(
-                modifier = Modifier.fillMaxSize()
-            ) { innerPadding ->
-
-                AjouterProgrammeAideScreen(
-                    viewModel = programmesAideViewModel,
-
-                    onProgrammeAjoute = {
+                FoyerDetailScreen(
+                    viewModel = viewModel,
+                    onAjouterHabitant = {
+                        navController.navigate("foyer/$foyerId/ajouter-habitant")
+                    },
+                    onFoyerDesactive = {
                         navController.popBackStack()
                     },
-
                     onRetour = {
                         navController.popBackStack()
                     }
                 )
             }
-        }
 
-        // ---------------------------------------------------------
-        // 2. DETAIL D'UN FOYER
-        // ---------------------------------------------------------
+            composable(
+                route = "foyer/{foyerId}/ajouter-habitant",
+                arguments = listOf(navArgument("foyerId") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val foyerId = backStackEntry.arguments?.getLong("foyerId") ?: return@composable
 
-        composable(
-            route = "foyer/{foyerId}",
-            arguments = listOf(
-                navArgument("foyerId") {
-                    type = NavType.LongType
-                }
-            )
-        ) { backStackEntry ->
-
-            val foyerId =
-                backStackEntry.arguments?.getLong("foyerId")
-                    ?: return@composable
-
-            val viewModel: FoyerDetailViewModel = viewModel(
-                factory = object : ViewModelProvider.Factory {
-
-                    @Suppress("UNCHECKED_CAST")
-                    override fun <T : ViewModel> create(
-                        modelClass: Class<T>
-                    ): T {
-                        return FoyerDetailViewModel(
-                            repository = repository,
-                            foyerId = foyerId
-                        ) as T
+                val viewModel: FoyerDetailViewModel = viewModel(
+                    factory = object : ViewModelProvider.Factory {
+                        @Suppress("UNCHECKED_CAST")
+                        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                            return FoyerDetailViewModel(repository = repository, foyerId = foyerId) as T
+                        }
                     }
-                }
-            )
+                )
 
-            Scaffold(
-                modifier = Modifier.fillMaxSize()
-            ) { innerPadding ->
-
-                FoyerDetailScreen(
+                AjouterHabitantScreen(
                     viewModel = viewModel,
-
-                    contentPadding = innerPadding,
-
-                    onAjouterHabitant = {
-                        navController.navigate(
-                            "foyer/$foyerId/ajouter-habitant"
-                        )
+                    onHabitantAjoute = {
+                        navController.popBackStack()
                     },
-                    onFoyerDesactive = {
+                    onRetour = {
                         navController.popBackStack()
                     }
                 )
             }
-        }
 
-        // ---------------------------------------------------------
-        // 3. AJOUTER UN HABITANT
-        // ---------------------------------------------------------
-
-        composable(
-            route = "foyer/{foyerId}/ajouter-habitant",
-            arguments = listOf(
-                navArgument("foyerId") {
-                    type = NavType.LongType
-                }
-            )
-        ) { backStackEntry ->
-
-            val foyerId =
-                backStackEntry.arguments?.getLong("foyerId")
-                    ?: return@composable
-
-            val viewModel: FoyerDetailViewModel = viewModel(
-                factory = object : ViewModelProvider.Factory {
-
-                    @Suppress("UNCHECKED_CAST")
-                    override fun <T : ViewModel> create(
-                        modelClass: Class<T>
-                    ): T {
-                        return FoyerDetailViewModel(
-                            repository = repository,
-                            foyerId = foyerId
-                        ) as T
+            composable("aides") {
+                AidesScreen(
+                    viewModel = programmesAideViewModel,
+                    onAjouterProgramme = {
+                        navController.navigate("aides/ajouter")
+                    },
+                    onModifierProgramme = { programme ->
+                        navController.navigate("aides/modifier/${programme.id}")
                     }
-                }
-            )
+                )
+            }
 
-            Scaffold(
-                modifier = Modifier.fillMaxSize()
-            ) { innerPadding ->
+            composable(
+                route = "aides/modifier/{programmeId}",
+                arguments = listOf(navArgument("programmeId") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val programmeId = backStackEntry.arguments?.getLong("programmeId") ?: return@composable
+                ModifierProgrammeAideScreen(
+                    viewModel = programmesAideViewModel,
+                    programmeId = programmeId,
+                    onProgrammeModifie = { navController.popBackStack() },
+                    onRetour = { navController.popBackStack() }
+                )
+            }
 
-                AjouterHabitantScreen(
-                    viewModel = viewModel,
-
-                    contentPadding = innerPadding,
-
-                    onHabitantAjoute = {
-                        navController.popBackStack()
-                    }
+            composable("aides/ajouter") {
+                AjouterProgrammeAideScreen(
+                    viewModel = programmesAideViewModel,
+                    onProgrammeAjoute = { navController.popBackStack() },
+                    onRetour = { navController.popBackStack() }
                 )
             }
         }

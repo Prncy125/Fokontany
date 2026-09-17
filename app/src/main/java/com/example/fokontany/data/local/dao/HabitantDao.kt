@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
 import com.example.fokontany.data.local.entity.HabitantEntity
+import com.example.fokontany.data.local.relation.HabitantAvecFoyer
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -73,6 +74,23 @@ abstract class HabitantDao {
     abstract fun rechercher(
         recherche: String
     ): Flow<List<HabitantEntity>>
+    @Transaction
+    @Query(
+        """
+        SELECT *
+        FROM habitants
+        WHERE actif = 1
+        AND (
+            nom LIKE '%' || :recherche || '%'
+            OR prenom LIKE '%' || :recherche || '%'
+        )
+        ORDER BY nom ASC, prenom ASC
+        """
+    )
+    abstract fun rechercherAvecFoyer(
+        recherche: String
+    ): Flow<List<HabitantAvecFoyer>>
+
 
     @Query(
         """

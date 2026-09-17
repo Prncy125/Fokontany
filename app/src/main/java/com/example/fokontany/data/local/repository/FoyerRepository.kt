@@ -4,6 +4,7 @@ import com.example.fokontany.data.local.dao.FoyerDao
 import com.example.fokontany.data.local.dao.HabitantDao
 import com.example.fokontany.data.local.entity.FoyerEntity
 import com.example.fokontany.data.local.entity.HabitantEntity
+import com.example.fokontany.data.local.relation.HabitantAvecFoyer
 import kotlinx.coroutines.flow.Flow
 
 class FoyerRepository(
@@ -59,4 +60,7 @@ class FoyerRepository(
     suspend fun activerHabitant(habitantId: Long) {
         habitantDao.activer(habitantId)
     }
+
+    fun rechercherHabitants(recherche: String) =
+        habitantDao.rechercherAvecFoyer(recherche)
 }
