@@ -1,4 +1,4 @@
-package com.example.fokontany.data.local.dao
+﻿package com.example.fokontany.data.local.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
@@ -62,6 +62,21 @@ interface FoyerDao {
         """
     )
     fun rechercher(recherche: String): Flow<List<FoyerEntity>>
+
+    @Transaction
+    @Query(
+        """
+        SELECT *
+        FROM foyers
+        WHERE actif = 1
+        AND (
+            adresse LIKE '%' || :recherche || '%'
+            OR quartier LIKE '%' || :recherche || '%'
+        )
+        ORDER BY quartier ASC, adresse ASC
+        """
+    )
+    fun rechercherAvecHabitants(recherche: String): Flow<List<FoyerAvecHabitants>>
 
     @Transaction
     @Query(

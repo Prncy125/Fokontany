@@ -1,9 +1,10 @@
-package com.example.fokontany.data.local.repository
+﻿package com.example.fokontany.data.local.repository
 
 import com.example.fokontany.data.local.dao.FoyerDao
 import com.example.fokontany.data.local.dao.HabitantDao
 import com.example.fokontany.data.local.entity.FoyerEntity
 import com.example.fokontany.data.local.entity.HabitantEntity
+import com.example.fokontany.data.local.relation.FoyerAvecHabitants
 import com.example.fokontany.data.local.relation.HabitantAvecFoyer
 import kotlinx.coroutines.flow.Flow
 
@@ -63,4 +64,7 @@ class FoyerRepository(
 
     fun rechercherHabitants(recherche: String) =
         habitantDao.rechercherAvecFoyer(recherche)
+
+    fun rechercherFoyers(recherche: String) =
+        foyerDao.rechercherAvecHabitants(recherche)
 }
