@@ -19,4 +19,20 @@ class DistributionAideRepository(
     suspend fun enregistrerSiAbsente(distribution: DistributionAideEntity): Long? {
         return dao.enregistrerSiAbsente(distribution)
     }
+
+    suspend fun synchroniserDistributions() {
+        dao.marquerPendingCommeSynced()
+    }
+
+    suspend fun marquerSynchronisationEnErreur() {
+        dao.marquerPendingCommeError()
+    }
+
+    fun compterPending(): Flow<Int> {
+        return dao.compterPending()
+    }
+
+    fun compterErrors(): Flow<Int> {
+        return dao.compterErrors()
+    }
 }

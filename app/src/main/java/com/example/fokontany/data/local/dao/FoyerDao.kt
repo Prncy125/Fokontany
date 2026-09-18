@@ -90,4 +90,27 @@ interface FoyerDao {
     fun observerAvecHabitants(
         foyerId: Long
     ): Flow<FoyerAvecHabitants?>
+
+
+    @Query("""
+    UPDATE foyers
+    SET syncStatus = 'SYNCED'
+    WHERE syncStatus = 'PENDING'
+    """)
+    suspend fun marquerPendingCommeSynced()
+
+
+    @Query("""
+    UPDATE foyers
+    SET syncStatus = 'ERROR'
+    WHERE syncStatus = 'PENDING'
+    """)
+    suspend fun marquerPendingCommeError()
+
+    @Query("SELECT COUNT(*) FROM foyers WHERE syncStatus = 'PENDING'")
+    fun compterPending(): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM foyers WHERE syncStatus = 'ERROR'")
+    fun compterErrors(): Flow<Int>
+
 }

@@ -26,7 +26,6 @@ sealed class EnregistrementResultat {
     data class DoubleDistribution(val message: String) : EnregistrementResultat()
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 class DistributionViewModel(
     private val distributionRepository: DistributionAideRepository,
     private val programmeRepository: ProgrammeAideRepository,

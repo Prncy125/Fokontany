@@ -23,4 +23,20 @@ class ProgrammeAideRepository(
     suspend fun modifier(programme: ProgrammeAideEntity) {
         dao.modifier(programme)
     }
+
+    suspend fun synchroniserProgrammes() {
+        dao.marquerPendingCommeSynced()
+    }
+
+    suspend fun marquerSynchronisationEnErreur() {
+        dao.marquerPendingCommeError()
+    }
+
+    fun compterPending(): Flow<Int> {
+        return dao.compterPending()
+    }
+
+    fun compterErrors(): Flow<Int> {
+        return dao.compterErrors()
+    }
 }

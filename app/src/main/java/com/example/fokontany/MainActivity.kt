@@ -54,6 +54,20 @@ import com.example.fokontany.ui.aides.ModifierProgrammeAideScreen
 import com.example.fokontany.ui.distribution.DistributionViewModel
 import com.example.fokontany.ui.distribution.DistributionsScreen
 import com.example.fokontany.ui.distribution.NouvelleDistributionScreen
+import com.example.fokontany.data.remote.FakeRemoteDataSource
+import com.example.fokontany.data.sync.SyncManager
+import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.outlined.Sync
+import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import com.example.fokontany.ui.synchronisation.SyncViewModel
+import com.example.fokontany.ui.synchronisation.SynchronisationScreen
 
 sealed class BottomNavItem(
     val route: String,
@@ -79,12 +93,19 @@ sealed class BottomNavItem(
         selectedIcon = Icons.Filled.VolunteerActivism,
         unselectedIcon = Icons.Outlined.VolunteerActivism
     )
+    data object Synchronisation : BottomNavItem(
+        route = "synchronisation",
+        label = "Sync",
+        selectedIcon = Icons.Filled.Sync,
+        unselectedIcon = Icons.Outlined.Sync
+    )
 }
 
 val bottomNavItems = listOf(
     BottomNavItem.Foyers,
     BottomNavItem.Aides,
-    BottomNavItem.Distributions
+    BottomNavItem.Distributions,
+    BottomNavItem.Synchronisation
 )
 
 class MainActivity : ComponentActivity() {
@@ -110,7 +131,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
     private val distributionViewModel: DistributionViewModel by viewModels {
         val database = AppDatabase.getDatabase(applicationContext)
         val distributionRepo = DistributionAideRepository(database.distributionAideDao())
@@ -124,14 +144,72 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private val syncViewModel: SyncViewModel by viewModels {
+        val database = AppDatabase.getDatabase(applicationContext)
+
+        val foyerRepository = FoyerRepository(
+            database.foyerDao(),
+            database.habitantDao()
+        )
+
+        val programmeAideRepository =
+            ProgrammeAideRepository(database.programmeAideDao())
+
+        val distributionAideRepository =
+            DistributionAideRepository(database.distributionAideDao())
+
+        val remoteDataSource = FakeRemoteDataSource()
+
+        val syncManager = SyncManager(
+            remoteDataSource = remoteDataSource,
+            foyerRepository = foyerRepository,
+            programmeAideRepository = programmeAideRepository,
+            distributionAideRepository = distributionAideRepository
+        )
+
+        object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(
+                modelClass: Class<T>
+            ): T {
+                return SyncViewModel(
+                    syncManager = syncManager,
+                    foyerRepository = foyerRepository,
+                    programmeAideRepository = programmeAideRepository,
+                    distributionAideRepository = distributionAideRepository
+                ) as T
+            }
+        }
+    }
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         val database = AppDatabase.getDatabase(applicationContext)
-        val repository = FoyerRepository(database.foyerDao(), database.habitantDao())
-        val distributionRepository = DistributionAideRepository(database.distributionAideDao())
+
+        val repository = FoyerRepository(
+            database.foyerDao(),
+            database.habitantDao()
+        )
+
+        val programmeAideRepository = ProgrammeAideRepository(
+            database.programmeAideDao()
+        )
+
+        val distributionRepository = DistributionAideRepository(
+            database.distributionAideDao()
+        )
+
+        val remoteDataSource = FakeRemoteDataSource()
+
+        val syncManager = SyncManager(
+            remoteDataSource = remoteDataSource,
+            foyerRepository = repository,
+            programmeAideRepository = programmeAideRepository,
+            distributionAideRepository = distributionRepository
+        )
 
         setContent {
             FokontanyTheme {
@@ -140,7 +218,9 @@ class MainActivity : ComponentActivity() {
                     programmesAideViewModel = programmesAideViewModel,
                     distributionViewModel = distributionViewModel,
                     repository = repository,
-                    distributionRepository = distributionRepository
+                    distributionRepository = distributionRepository,
+                    syncManager = syncManager,
+                    syncViewModel = syncViewModel
                 )
             }
         }
@@ -154,9 +234,12 @@ fun FokontanyApp(
     programmesAideViewModel: ProgrammesAideViewModel,
     distributionViewModel: DistributionViewModel,
     repository: FoyerRepository,
-    distributionRepository: DistributionAideRepository
+    distributionRepository: DistributionAideRepository,
+    syncManager: SyncManager,
+    syncViewModel: SyncViewModel
 ) {
     val navController = rememberNavController()
+    val scope = rememberCoroutineScope()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
@@ -329,6 +412,12 @@ fun FokontanyApp(
                     viewModel = distributionViewModel,
                     onRetour = { navController.popBackStack() },
                     onSucces = { navController.popBackStack() }
+                )
+            }
+
+            composable("synchronisation") {
+                SynchronisationScreen(
+                    viewModel = syncViewModel
                 )
             }
         }
