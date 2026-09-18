@@ -1,4 +1,3 @@
-
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(ktorLibs.plugins.ktor)
@@ -15,6 +14,9 @@ application {
 kotlin {
     jvmToolchain(21)
 }
+
+val exposedVersion = "0.60.0"
+
 dependencies {
     implementation(ktorLibs.serialization.kotlinx.json)
     implementation(ktorLibs.server.callLogging)
@@ -24,6 +26,13 @@ dependencies {
     implementation(ktorLibs.server.netty)
     implementation(ktorLibs.server.resources)
     implementation(libs.logback.classic)
+
+    // Exposed (ORM pour MySQL)
+    implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
+
+    // MySQL Driver
+    implementation("mysql:mysql-connector-java:8.0.33")
 
     testImplementation(kotlin("test"))
     testImplementation(ktorLibs.server.testHost)

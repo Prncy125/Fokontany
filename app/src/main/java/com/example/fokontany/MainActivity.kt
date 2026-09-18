@@ -55,7 +55,14 @@ import com.example.fokontany.ui.distribution.DistributionViewModel
 import com.example.fokontany.ui.distribution.DistributionsScreen
 import com.example.fokontany.ui.distribution.NouvelleDistributionScreen
 import com.example.fokontany.data.remote.FakeRemoteDataSource
+import com.example.fokontany.data.remote.FokontanyApiService
+import com.example.fokontany.data.remote.KtorRemoteDataSource
 import com.example.fokontany.data.sync.SyncManager
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.serialization.json.Json
 import androidx.compose.material3.Button
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -110,6 +117,17 @@ val bottomNavItems = listOf(
 
 class MainActivity : ComponentActivity() {
 
+    private val httpClient = HttpClient(OkHttp) {
+        install(ContentNegotiation) {
+            json(Json {
+                ignoreUnknownKeys = true
+                isLenient = true
+            })
+        }
+    }
+
+    private val apiService = FokontanyApiService(httpClient)
+
     private val foyersViewModel: FoyersViewModel by viewModels {
         val database = AppDatabase.getDatabase(applicationContext)
         val repository = FoyerRepository(database.foyerDao(), database.habitantDao())
@@ -158,7 +176,7 @@ class MainActivity : ComponentActivity() {
         val distributionAideRepository =
             DistributionAideRepository(database.distributionAideDao())
 
-        val remoteDataSource = FakeRemoteDataSource()
+        val remoteDataSource = KtorRemoteDataSource(apiService)
 
         val syncManager = SyncManager(
             remoteDataSource = remoteDataSource,
@@ -202,7 +220,7 @@ class MainActivity : ComponentActivity() {
             database.distributionAideDao()
         )
 
-        val remoteDataSource = FakeRemoteDataSource()
+        val remoteDataSource = KtorRemoteDataSource(apiService)
 
         val syncManager = SyncManager(
             remoteDataSource = remoteDataSource,
