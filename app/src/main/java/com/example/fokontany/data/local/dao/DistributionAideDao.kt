@@ -15,6 +15,15 @@ abstract class DistributionAideDao {
         """
         SELECT *
         FROM distributions_aide
+        ORDER BY dateDistribution DESC
+        """
+    )
+    abstract fun observerTous(): Flow<List<DistributionAideEntity>>
+
+    @Query(
+        """
+        SELECT *
+        FROM distributions_aide
         WHERE foyerId = :foyerId
         ORDER BY dateDistribution DESC
         """

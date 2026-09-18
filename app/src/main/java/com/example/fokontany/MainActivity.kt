@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.VolunteerActivism
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -36,6 +38,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.fokontany.data.local.database.AppDatabase
+import com.example.fokontany.data.local.repository.DistributionAideRepository
 import com.example.fokontany.data.local.repository.FoyerRepository
 import com.example.fokontany.ui.foyers.AjouterHabitantScreen
 import com.example.fokontany.ui.foyers.FoyerDetailScreen
@@ -48,6 +51,9 @@ import com.example.fokontany.ui.aides.AidesScreen
 import com.example.fokontany.ui.aides.ProgrammesAideViewModel
 import com.example.fokontany.ui.aides.AjouterProgrammeAideScreen
 import com.example.fokontany.ui.aides.ModifierProgrammeAideScreen
+import com.example.fokontany.ui.distribution.DistributionViewModel
+import com.example.fokontany.ui.distribution.DistributionsScreen
+import com.example.fokontany.ui.distribution.NouvelleDistributionScreen
 
 sealed class BottomNavItem(
     val route: String,
@@ -67,11 +73,18 @@ sealed class BottomNavItem(
         selectedIcon = Icons.Filled.Favorite,
         unselectedIcon = Icons.Outlined.FavoriteBorder
     )
+    data object Distributions : BottomNavItem(
+        route = "distributions",
+        label = "Distributions",
+        selectedIcon = Icons.Filled.VolunteerActivism,
+        unselectedIcon = Icons.Outlined.VolunteerActivism
+    )
 }
 
 val bottomNavItems = listOf(
     BottomNavItem.Foyers,
-    BottomNavItem.Aides
+    BottomNavItem.Aides,
+    BottomNavItem.Distributions
 )
 
 class MainActivity : ComponentActivity() {
@@ -98,6 +111,19 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private val distributionViewModel: DistributionViewModel by viewModels {
+        val database = AppDatabase.getDatabase(applicationContext)
+        val distributionRepo = DistributionAideRepository(database.distributionAideDao())
+        val programmeRepo = ProgrammeAideRepository(database.programmeAideDao())
+        val foyerRepo = FoyerRepository(database.foyerDao(), database.habitantDao())
+        object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return DistributionViewModel(distributionRepo, programmeRepo, foyerRepo) as T
+            }
+        }
+    }
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -105,13 +131,16 @@ class MainActivity : ComponentActivity() {
 
         val database = AppDatabase.getDatabase(applicationContext)
         val repository = FoyerRepository(database.foyerDao(), database.habitantDao())
+        val distributionRepository = DistributionAideRepository(database.distributionAideDao())
 
         setContent {
             FokontanyTheme {
                 FokontanyApp(
                     foyersViewModel = foyersViewModel,
                     programmesAideViewModel = programmesAideViewModel,
-                    repository = repository
+                    distributionViewModel = distributionViewModel,
+                    repository = repository,
+                    distributionRepository = distributionRepository
                 )
             }
         }
@@ -123,7 +152,9 @@ class MainActivity : ComponentActivity() {
 fun FokontanyApp(
     foyersViewModel: FoyersViewModel,
     programmesAideViewModel: ProgrammesAideViewModel,
-    repository: FoyerRepository
+    distributionViewModel: DistributionViewModel,
+    repository: FoyerRepository,
+    distributionRepository: DistributionAideRepository
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -177,6 +208,10 @@ fun FokontanyApp(
             startDestination = "foyers",
             modifier = Modifier.padding(innerPadding)
         ) {
+
+            // ---------------------------------------------------------
+            // FOYERS
+            // ---------------------------------------------------------
             composable("foyers") {
                 FoyersScreen(
                     viewModel = foyersViewModel,
@@ -196,7 +231,11 @@ fun FokontanyApp(
                     factory = object : ViewModelProvider.Factory {
                         @Suppress("UNCHECKED_CAST")
                         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                            return FoyerDetailViewModel(repository = repository, foyerId = foyerId) as T
+                            return FoyerDetailViewModel(
+                                repository = repository,
+                                distributionRepository = distributionRepository,
+                                foyerId = foyerId
+                            ) as T
                         }
                     }
                 )
@@ -206,12 +245,8 @@ fun FokontanyApp(
                     onAjouterHabitant = {
                         navController.navigate("foyer/$foyerId/ajouter-habitant")
                     },
-                    onFoyerDesactive = {
-                        navController.popBackStack()
-                    },
-                    onRetour = {
-                        navController.popBackStack()
-                    }
+                    onFoyerDesactive = { navController.popBackStack() },
+                    onRetour = { navController.popBackStack() }
                 )
             }
 
@@ -225,22 +260,25 @@ fun FokontanyApp(
                     factory = object : ViewModelProvider.Factory {
                         @Suppress("UNCHECKED_CAST")
                         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                            return FoyerDetailViewModel(repository = repository, foyerId = foyerId) as T
+                            return FoyerDetailViewModel(
+                                repository = repository,
+                                distributionRepository = distributionRepository,
+                                foyerId = foyerId
+                            ) as T
                         }
                     }
                 )
 
                 AjouterHabitantScreen(
                     viewModel = viewModel,
-                    onHabitantAjoute = {
-                        navController.popBackStack()
-                    },
-                    onRetour = {
-                        navController.popBackStack()
-                    }
+                    onHabitantAjoute = { navController.popBackStack() },
+                    onRetour = { navController.popBackStack() }
                 )
             }
 
+            // ---------------------------------------------------------
+            // AIDES
+            // ---------------------------------------------------------
             composable("aides") {
                 AidesScreen(
                     viewModel = programmesAideViewModel,
@@ -271,6 +309,26 @@ fun FokontanyApp(
                     viewModel = programmesAideViewModel,
                     onProgrammeAjoute = { navController.popBackStack() },
                     onRetour = { navController.popBackStack() }
+                )
+            }
+
+            // ---------------------------------------------------------
+            // DISTRIBUTIONS
+            // ---------------------------------------------------------
+            composable("distributions") {
+                DistributionsScreen(
+                    viewModel = distributionViewModel,
+                    onNouvelleDistribution = {
+                        navController.navigate("distributions/nouvelle")
+                    }
+                )
+            }
+
+            composable("distributions/nouvelle") {
+                NouvelleDistributionScreen(
+                    viewModel = distributionViewModel,
+                    onRetour = { navController.popBackStack() },
+                    onSucces = { navController.popBackStack() }
                 )
             }
         }

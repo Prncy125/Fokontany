@@ -1,9 +1,11 @@
-package com.example.fokontany.ui.foyers
+﻿package com.example.fokontany.ui.foyers
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.fokontany.data.local.entity.DistributionAideEntity
 import com.example.fokontany.data.local.entity.HabitantEntity
 import com.example.fokontany.data.local.relation.FoyerAvecHabitants
+import com.example.fokontany.data.local.repository.DistributionAideRepository
 import com.example.fokontany.data.local.repository.FoyerRepository
 import com.example.fokontany.domain.model.SyncStatus
 import kotlinx.coroutines.flow.SharingStarted
@@ -13,6 +15,7 @@ import kotlinx.coroutines.launch
 
 class FoyerDetailViewModel(
     private val repository: FoyerRepository,
+    private val distributionRepository: DistributionAideRepository,
     private val foyerId: Long
 ) : ViewModel() {
 
@@ -22,6 +25,14 @@ class FoyerDetailViewModel(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000),
                 initialValue = null
+            )
+
+    val historiqueDistributions: StateFlow<List<DistributionAideEntity>> =
+        distributionRepository.observerHistoriqueFoyer(foyerId)
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = emptyList()
             )
 
     fun ajouterHabitant(
@@ -54,24 +65,18 @@ class FoyerDetailViewModel(
                     habitantId = habitantId
                 )
             } catch (e: IllegalArgumentException) {
-                // La règle métier empêche l'opération.
-                // On évite que l'exception fasse planter l'application.
             }
         }
     }
-    fun modifierFoyer(
-        adresse: String,
-        quartier: String
-    ) {
+
+    fun modifierFoyer(adresse: String, quartier: String) {
         viewModelScope.launch {
             val foyerActuel = foyer.value?.foyer ?: return@launch
-
             val foyerModifie = foyerActuel.copy(
                 adresse = adresse.trim(),
                 quartier = quartier.trim(),
                 syncStatus = SyncStatus.PENDING
             )
-
             repository.modifierFoyer(foyerModifie)
         }
     }
@@ -101,7 +106,6 @@ class FoyerDetailViewModel(
                 codePaysTelephone = codePaysTelephone,
                 syncStatus = SyncStatus.PENDING
             )
-
             repository.modifierHabitant(habitantModifie)
         }
     }

@@ -67,4 +67,8 @@ class FoyerRepository(
 
     fun rechercherFoyers(recherche: String) =
         foyerDao.rechercherAvecHabitants(recherche)
+
+    suspend fun trouverRepresentant(foyerId: Long): HabitantEntity? {
+        return habitantDao.trouverRepresentant(foyerId)
+    }
 }

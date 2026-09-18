@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -57,7 +59,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.fokontany.data.local.entity.DistributionAideEntity
 import com.example.fokontany.data.local.entity.HabitantEntity
+import com.example.fokontany.domain.model.StatutDistribution
 import com.rejowan.ccpc.Country
 import com.rejowan.ccpc.CountryCodePickerTextField
 import java.util.Calendar
@@ -71,6 +75,7 @@ fun FoyerDetailScreen(
     onRetour: () -> Unit = {}
 ) {
     val foyerAvecHabitants by viewModel.foyer.collectAsState()
+    val historiqueDistributions by viewModel.historiqueDistributions.collectAsState()
 
     val foyerData = foyerAvecHabitants
 
@@ -414,7 +419,7 @@ fun FoyerDetailScreen(
                         }
                     }
                 } else {
-                    items(items = habitants, key = { it.id }) { habitant ->
+                    items(items = habitants, key = { "hab_${it.id}" }) { habitant ->
                         HabitantItem(
                             habitant = habitant,
                             onDefinirRepresentant = { viewModel.definirRepresentant(habitant.id) },
@@ -428,6 +433,151 @@ fun FoyerDetailScreen(
                             },
                             onDesactiver = { viewModel.desactiverHabitant(habitant.id) },
                             onActiver = { viewModel.activerHabitant(habitant.id) }
+                        )
+                    }
+                }
+
+                // ---------------------------------------------------------
+                // HISTORIQUE DES AIDES
+                // ---------------------------------------------------------
+
+                item {
+                    Text(
+                        text = "Historique des aides",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 20.dp)
+                    )
+                    Text(
+                        text = if (historiqueDistributions.size == 1) "1 aide recue" else "${historiqueDistributions.size} aides recues",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
+
+                if (historiqueDistributions.isEmpty()) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = MaterialTheme.shapes.large
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Surface(
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                    shape = MaterialTheme.shapes.large
+                                ) {
+                                    Icon(
+                                        Icons.Default.VolunteerActivism, contentDescription = null,
+                                        modifier = Modifier.padding(16.dp).size(40.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Text("Aucune aide recue", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
+                                Text(
+                                    "Ce foyer n'a pas encore beneficie d'aide.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    items(items = historiqueDistributions, key = { "dist_${it.id}" }) { distribution ->
+                        DistributionItem(distribution = distribution)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DistributionItem(distribution: DistributionAideEntity) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                color = if (distribution.statut == StatutDistribution.RECUPEREE)
+                    MaterialTheme.colorScheme.primaryContainer
+                else
+                    MaterialTheme.colorScheme.surfaceVariant,
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Icon(
+                    imageVector = Icons.Default.VolunteerActivism,
+                    contentDescription = null,
+                    modifier = Modifier.padding(10.dp).size(24.dp),
+                    tint = if (distribution.statut == StatutDistribution.RECUPEREE)
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 14.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = distribution.dateDistribution,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Surface(
+                        color = if (distribution.statut == StatutDistribution.RECUPEREE)
+                            MaterialTheme.colorScheme.primaryContainer
+                        else
+                            MaterialTheme.colorScheme.errorContainer,
+                        shape = MaterialTheme.shapes.small
+                    ) {
+                        Text(
+                            text = if (distribution.statut == StatutDistribution.RECUPEREE) "Recuperee" else "Annulee",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (distribution.statut == StatutDistribution.RECUPEREE)
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            else
+                                MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.padding(top = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    if (distribution.montant != null) {
+                        Text(
+                            text = "${distribution.montant} Ar",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    if (distribution.quantite != null) {
+                        Text(
+                            text = "Qte: ${distribution.quantite}",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
