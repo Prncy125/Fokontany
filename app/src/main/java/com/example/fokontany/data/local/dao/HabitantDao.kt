@@ -181,4 +181,27 @@ abstract class HabitantDao {
             habitantId = habitantId
         )
     }
+
+
+    @Query("""
+    UPDATE habitants
+    SET syncStatus = 'SYNCED'
+    WHERE syncStatus = 'PENDING'
+    """)
+    abstract suspend fun marquerPendingCommeSynced()
+
+
+    @Query("""
+    UPDATE habitants
+    SET syncStatus = 'ERROR'
+    WHERE syncStatus = 'PENDING'
+    """)
+    abstract suspend fun marquerPendingCommeError()
+
+
+    @Query("SELECT COUNT(*) FROM habitants WHERE syncStatus = 'PENDING'")
+    abstract fun compterPending(): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM habitants WHERE syncStatus = 'ERROR'")
+    abstract fun compterErrors(): Flow<Int>
 }

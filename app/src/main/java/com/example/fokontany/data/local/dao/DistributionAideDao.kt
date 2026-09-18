@@ -67,4 +67,27 @@ abstract class DistributionAideDao {
 
         return insererInterne(distribution)
     }
+
+
+    @Query("""
+    UPDATE distributions_aide
+    SET syncStatus = 'SYNCED'
+    WHERE syncStatus = 'PENDING'
+    """)
+    abstract suspend fun marquerPendingCommeSynced()
+
+
+    @Query("""
+    UPDATE distributions_aide
+    SET syncStatus = 'ERROR'
+    WHERE syncStatus = 'PENDING'
+    """)
+    abstract suspend fun marquerPendingCommeError()
+
+
+    @Query("SELECT COUNT(*) FROM distributions_aide WHERE syncStatus = 'PENDING'")
+    abstract fun compterPending(): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM distributions_aide WHERE syncStatus = 'ERROR'")
+    abstract fun compterErrors(): Flow<Int>
 }

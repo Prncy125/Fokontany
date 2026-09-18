@@ -71,4 +71,30 @@ class FoyerRepository(
     suspend fun trouverRepresentant(foyerId: Long): HabitantEntity? {
         return habitantDao.trouverRepresentant(foyerId)
     }
+
+    suspend fun synchroniserFoyersEtHabitants() {
+        foyerDao.marquerPendingCommeSynced()
+        habitantDao.marquerPendingCommeSynced()
+    }
+
+    suspend fun marquerSynchronisationEnErreur() {
+        foyerDao.marquerPendingCommeError()
+        habitantDao.marquerPendingCommeError()
+    }
+
+    fun compterPending(): Flow<Int> {
+        return foyerDao.compterPending()
+    }
+
+    fun compterErrors(): Flow<Int> {
+        return foyerDao.compterErrors()
+    }
+
+    fun compterHabitantsPending(): Flow<Int> {
+        return habitantDao.compterPending()
+    }
+
+    fun compterHabitantsErrors(): Flow<Int> {
+        return habitantDao.compterErrors()
+    }
 }
